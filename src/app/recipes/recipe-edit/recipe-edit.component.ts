@@ -60,7 +60,7 @@ export class RecipeEditComponent implements OnInit {
     return (this.recipeForm.get('ingredients') as FormArray).controls;
   }
 
-  private onSubmit() {
+  public onSubmit() {
     // const name = this.recipeForm.value.name;
     // const description = this.recipeForm.value.description;
     // const imagePath = this.recipeForm.value.imagePath;
@@ -79,7 +79,7 @@ export class RecipeEditComponent implements OnInit {
     this.onCancelEdit();
   }
 
-  private onAddIngredient() {
+  public onAddIngredient() {
 
     (this.recipeForm.get('ingredients') as FormArray).push(
       new FormGroup({
@@ -90,11 +90,11 @@ export class RecipeEditComponent implements OnInit {
 
   }
 
-  private onDeleteIngredient(index: number) {
+  public onDeleteIngredient(index: number) {
     (this.recipeForm.get('ingredients') as FormArray).removeAt(index);
   }
 
-  private onCancelEdit() {
+  public onCancelEdit() {
     this.router.navigate(['../'], {relativeTo: this.route});
   }
 
