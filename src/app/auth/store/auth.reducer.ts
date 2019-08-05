@@ -18,20 +18,9 @@ export function authReducer( state = initialState, action: fromAuthActions.AuthA
   // Determine Return Value Based Upon Action
   switch (action.type) {
 
-    // If We Sent an HTTP Request to Login
-    case fromAuthActions.LOGIN_REQUEST:
-
-      // Keep the current State
-      // Set Loading to True Since Waiting on Async Task
-      // Clear Any Error We Might Have
-      return {
-        ...state,
-        loading: true,
-        authError: null
-      };
-
-    // If We Sent an HTTP Request to Sign Up
+    // If We Sent an HTTP Request to Login or Sign Up
     case fromAuthActions.SIGN_UP_REQUEST:
+    case fromAuthActions.LOGIN_REQUEST:
 
       // Keep the current State
       // Set Loading to True Since Waiting on Async Task
@@ -88,6 +77,16 @@ export function authReducer( state = initialState, action: fromAuthActions.AuthA
         user: null,
         loading: false,
         authError: action.payload
+      };
+
+    // If We Received a Clear Error Action
+    case fromAuthActions.CLEAR_ERROR:
+
+      // Keep the Current State
+      // Set Error to null
+      return {
+        ...state,
+        authError: null
       };
 
     default:

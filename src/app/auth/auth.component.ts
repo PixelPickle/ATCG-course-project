@@ -31,6 +31,9 @@ export class AuthComponent implements OnInit, OnDestroy {
   // Container for the Error Message Displayed when Alert Component is Created
   error: string = null;
 
+  // Subscription for Auth Store
+  private storeSubscription: Subscription;
+
   // Subscription for Alert Component
   private alertSubscription: Subscription;
 
@@ -40,7 +43,7 @@ export class AuthComponent implements OnInit, OnDestroy {
   ngOnInit() {
 
     // Setup Subscription to Auth Store
-    this.store.select('auth').subscribe( authState => {
+    this.storeSubscription = this.store.select('auth').subscribe( authState => {
 
       // When a New State is Emitted, Capture Loading Boolean
       this.isLoading = authState.loading;
@@ -61,11 +64,19 @@ export class AuthComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
 
-    // If We Have a Subscription:
+    // If We Have an Alert Subscription:
     if (this.alertSubscription) {
 
       // We Need to Unsubscribe From It
       this.alertSubscription.unsubscribe();
+    }
+
+    // If We Have a Store Subscription:
+    if (this.storeSubscription) {
+
+       // We Need to Unsubscribe From It
+       this.storeSubscription.unsubscribe();
+
     }
 
   }
@@ -79,7 +90,7 @@ export class AuthComponent implements OnInit, OnDestroy {
 
   onSubmit(form: NgForm) {
 
-    // Submit the form
+    // Collect Form Data
     const email = form.value.email;
     const password = form.value.password;
 
@@ -113,6 +124,9 @@ export class AuthComponent implements OnInit, OnDestroy {
 
     // Subscribe to the Closed Subject
     this.alertSubscription = componentRef.instance.closed.subscribe( () => {
+
+      // When the Subject Emits, Clear the Error State
+      this.store.dispatch( new AuthActions.ClearError() );
 
       // When the Subject Emits, Unsubscribe Since the Component is Being Destroyed
       this.alertSubscription.unsubscribe();

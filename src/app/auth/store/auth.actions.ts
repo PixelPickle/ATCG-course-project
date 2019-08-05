@@ -9,6 +9,10 @@ export const LOGOUT = '[Auth] LOGOUT';
 export const AUTHENTICATE_SUCCESS = '[Auth] AUTHENTICATE_SUCCESS';
 export const AUTHENTICATE_FAILURE = '[Auth] AUTHENTICATE_FAILURE';
 
+// Misc Actions
+export const AUTO_LOGIN = '[Auth] AUTO_LOGIN';
+export const CLEAR_ERROR = '[Auth] CLEAR_ERROR';
+
 export class LoginRequest implements Action {
   readonly type = LOGIN_REQUEST;
   // Payload Contains Existing User Credentials
@@ -43,9 +47,21 @@ export class AuthenticateFailure implements Action {
   constructor(public payload: string) {}
 }
 
+export class AutoLogin implements Action {
+  readonly type = AUTO_LOGIN;
+  // No Payload Needed
+}
+
+export class ClearError implements Action {
+  readonly type = CLEAR_ERROR;
+  // No Payload Needed
+}
+
 export type AuthActions =
   | AuthenticateSuccess
   | AuthenticateFailure
   | LoginRequest
   | SignUpRequest
-  | Logout;
+  | Logout
+  | AutoLogin
+  | ClearError;

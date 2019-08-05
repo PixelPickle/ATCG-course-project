@@ -6,6 +6,8 @@ import {environment} from '../../../environments/environment';
 import {of} from 'rxjs';
 import {Injectable} from '@angular/core';
 import {Router} from '@angular/router';
+import {UserModel} from '../user.model';
+import { AuthService } from '../auth.service';
 
 export interface AuthResponseData {
   idToken: string;
@@ -20,6 +22,12 @@ const handleAuthentication = (email: string, userId: string, token: string, expi
 
   // Construct our Expiration Date Based on Current Time and the Lifespan of the Token
   const expirationDate = new Date(Date.now() + (expiresIn * 1000) );
+
+  // Construct User Object
+  const user = new UserModel( email, userId, token, expirationDate);
+
+  // Save User to Local Storage
+  localStorage.setItem('userData', JSON.stringify(user) );
 
   // Return an Authentication Success Action with Our Response Data as a Payload
   return new AuthActions.AuthenticateSuccess( {
@@ -84,7 +92,8 @@ export class AuthEffects {
   constructor(
     private actions$: Actions,
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   @Effect()
@@ -111,6 +120,14 @@ export class AuthEffects {
 
       // Take the HTTP Request Observable and Pipe it Into Here; Converting to Authorization Success or Authorization Failure
       ).pipe(
+
+        // Execute This Without Affecting the Observable
+        tap( responseData => {
+
+          // Provide the Auto Logout Timer a Duration in Milliseconds
+          this.authService.setLogoutTimer( +responseData.expiresIn * 1000 );
+
+        } ),
 
         // If the Observable IS NOT an error, Map it Into a Authorization Success Action
         map( responseData => {
@@ -159,6 +176,14 @@ export class AuthEffects {
       // Take the HTTP Request Observable and Pipe it Into Here; Converting to Authorization Success or Authorization Failure
       ).pipe(
 
+        // Execute This Without Affecting the Observable
+        tap( responseData => {
+
+          // Provide the Auto Logout Timer a Duration in Milliseconds
+          this.authService.setLogoutTimer( +responseData.expiresIn * 1000 );
+
+        } ),
+
         // If the Observable IS NOT an error, Map it Into a Authorization Success Action
         map( responseData => {
 
@@ -182,7 +207,7 @@ export class AuthEffects {
   );
 
   @Effect({dispatch: false})
-  authSuccess = this.actions$.pipe(
+  authRedirect = this.actions$.pipe(
 
     // Filter to Only Authenticate Success Actions
     ofType(AuthActions.AUTHENTICATE_SUCCESS),
@@ -195,6 +220,78 @@ export class AuthEffects {
       this.router.navigate( ['/'] ).then(null);
 
     } )
+  );
+
+  @Effect({dispatch: false})
+  authLogout = this.actions$.pipe(
+
+    // Filter to Only Logout Actions
+    ofType(AuthActions.LOGOUT),
+
+    // Execute This Without Affecting the Observable
+    tap( () => {
+
+      // Clear the Auto Logout Timer
+      this.authService.clearLogoutTimer();
+
+      // Remove the stored User Data from Local Storage
+      localStorage.removeItem('userData');
+
+      // Navigate to our "Home" Page (Which is Recipes)
+      // .then(null) Tells IntelliJ that We Do Handle the Returned Promise
+      this.router.navigate( ['/auth'] ).then(null);
+
+    } )
+
+  );
+
+  @Effect()
+  authAutoLogin = this.actions$.pipe(
+
+    // Filter to Only Auto Login Actions
+    ofType(AuthActions.AUTO_LOGIN),
+
+    // Do Something
+    map( () => {
+
+      // Pull 'userData' from Local Storage
+      const userData = JSON.parse(localStorage.getItem('userData'));
+
+      // Check if 'userData' Contains Anything
+      if (!userData) {
+
+        // Quit if 'userData' Doesn't Contain Data
+        return { type: 'GENERIC' };
+
+      }
+
+      // Since 'userData' Does Contain Data, Create a User Account
+      const loadedUser = new UserModel( userData.email, userData.id, userData.tokenData, new Date( userData.tokenExpirationDate ) );
+
+      // Validate that the Token is Still Active
+      if (loadedUser.token) {
+
+        // Calculate Duration Before Token will Expire
+        const expirationDuration = new Date( userData.tokenExpirationDate).getTime() - new Date().getTime();
+
+        // Provide the Auto Logout Timer a Duration in Milliseconds
+        this.authService.setLogoutTimer( expirationDuration );
+
+        // Return the Authentication Success Action, Providing a Payload of User Information
+        return (new AuthActions.AuthenticateSuccess({
+          email: loadedUser.email,
+          userId: loadedUser.id,
+          token: loadedUser.token,
+          expirationDate: new Date( userData.tokenExpirationDate )
+        }) );
+
+      }
+
+      // Token Wasn't Valid
+      return { type: 'GENERIC' };
+
+    } )
+
   );
 
 }
