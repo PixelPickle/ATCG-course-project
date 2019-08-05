@@ -34,7 +34,8 @@ const handleAuthentication = (email: string, userId: string, token: string, expi
     email,
     userId,
     token,
-    expirationDate
+    expirationDate,
+    redirect: true
   } );
 };
 
@@ -213,11 +214,15 @@ export class AuthEffects {
     ofType(AuthActions.AUTHENTICATE_SUCCESS),
 
     // Execute This Without Affecting the Observable
-    tap( () => {
+    tap( (authSuccessAction: AuthActions.AuthenticateSuccess) => {
 
-      // Navigate to our "Home" Page (Which is Recipes)
-      // .then(null) Tells IntelliJ that We Do Handle the Returned Promise
-      this.router.navigate( ['/'] ).then(null);
+      // If We Need to Redirect to Home
+      if ( authSuccessAction.payload.redirect ) {
+
+        // Navigate to our "Home" Page (Which is Recipes)
+        // .then(null) Tells IntelliJ that We Do Handle the Returned Promise
+        this.router.navigate( ['/'] ).then(null);
+      }
 
     } )
   );
@@ -282,7 +287,8 @@ export class AuthEffects {
           email: loadedUser.email,
           userId: loadedUser.id,
           token: loadedUser.token,
-          expirationDate: new Date( userData.tokenExpirationDate )
+          expirationDate: new Date( userData.tokenExpirationDate),
+          redirect: false
         }) );
 
       }
